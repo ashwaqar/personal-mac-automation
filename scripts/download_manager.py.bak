@@ -1,0 +1,124 @@
+from __future__ import annotations
+
+from pathlib import Path
+from datetime import datetime
+import shutil
+import logging
+import yaml
+
+BASE_DIR = Path.home() / "Projects" / "personal-mac-automation"
+CONFIG_FILE = BASE_DIR / "configs" / "download-rules.yaml"
+
+def expand_path(value: str) -> Path:
+    return Path(value).expanduser()
+
+def load_config() -> dict:
+    with CONFIG_FILE.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+def setup_logging(log_file: Path) -> None:
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        filename=str(log_file),
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+
+def file_age_days(path: Path) -> float:
+    return (datetime.now().timestamp() - path.stat().st_mtime) / 86400
+
+def get_rule(config: dict, item: Path) -> dict:
+    ext = item.suffix.lower().lstrip(".")
+    return config.get("rules", {}).get(ext, config.get("default", {}))
+
+def safe_move(src: Path, dst_dir: Path, dry_run: bool) -> None:
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    dst = dst_dir / src.name
+
+    if dry_run:
+        print(f"Would move: {src} -> {dst}")
+        logging.info("DRY_RUN MOVE %s -> %s", src, dst)
+        return
+
+    shutil.move(str(src), str(dst))
+    print(f"Moved: {src} -> {dst}")
+    logging.info("MOVE %s -> %s", src, dst)
+
+def safe_delete(path: Path, dry_run: bool) -> None:
+    if dry_run:
+        print(f"Would delete: {path}")
+        logging.info("DRY_RUN DELETE %s", path)
+        return
+
+    path.unlink()
+    print(f"Deleted: {path}")
+    logging.info("DELETE %s", path)
+
+def process_folder(source_dir: Path, target_dir: Path, threshold_key: str, config: dict, dry_run: bool) -> None:
+    if not source_dir.exists():
+        return
+
+    for item in source_dir.iterdir():
+        if not item.is_file():
+            continue
+
+        rule = get_rule(config, item)
+        threshold_days = rule.get(threshold_key)
+
+        if threshold_days is None:
+            continue
+
+        age = file_age_days(item)
+
+        if age >= threshold_days:
+            if threshold_key == "delete_after_days":
+                safe_delete(item, dry_run)
+            else:
+                safe_move(item, target_dir, dry_run)
+
+def main() -> None:
+    config = load_config()
+
+    paths = config.get("paths", {})
+    dry_run = config.get("settings", {}).get("dry_run", True)
+
+    downloads_dir = expand_path(paths["downloads_dir"])
+    auto_archive_dir = expand_path(paths["auto_archive_dir"])
+    trash_later_dir = expand_path(paths["trash_later_dir"])
+    log_file = expand_path(paths["log_file"])
+
+    setup_logging(log_file)
+
+    logging.info("Download manager started. dry_run=%s", dry_run)
+
+    # Stage 1: Downloads -> AutoArchive
+    process_folder(
+        source_dir=downloads_dir,
+        target_dir=auto_archive_dir,
+        threshold_key="archive_after_days",
+        config=config,
+        dry_run=dry_run,
+    )
+
+    # Stage 2: AutoArchive -> TrashLater
+    process_folder(
+        source_dir=auto_archive_dir,
+        target_dir=trash_later_dir,
+        threshold_key="trash_after_days",
+        config=config,
+        dry_run=dry_run,
+    )
+
+    # Stage 3: TrashLater -> Delete
+    process_folder(
+        source_dir=trash_later_dir,
+        target_dir=trash_later_dir,
+        threshold_key="delete_after_days",
+        config=config,
+        dry_run=dry_run,
+    )
+
+    logging.info("Download manager finished.")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,64 @@
+settings:
+  dry_run: false
+
+paths:
+  downloads_dir: ~/Downloads
+  auto_archive_dir: ~/Downloads/AutoArchive
+  trash_later_dir: ~/Downloads/TrashLater
+  to_review_dir: ~/Downloads/ToReview
+  media_incoming_dir: ~/Media/Videos/Incoming
+  media_to_sort_dir: ~/Media/Videos/ToSort
+  media_assets_dir: ~/Media/Assets/Downloads
+  log_file: ~/Projects/personal-mac-automation/logs/download-manager.log
+
+rules:
+  dmg:
+    archive_after_days: 3
+    trash_after_days: 14
+    delete_after_days: 30
+
+  pkg:
+    archive_after_days: 3
+    trash_after_days: 14
+    delete_after_days: 30
+
+  zip:
+    archive_after_days: 7
+    trash_after_days: 30
+    delete_after_days: 60
+
+  pdf:
+    archive_after_days: 30
+    trash_after_days: 90
+    delete_after_days: 120
+
+  docx:
+    archive_after_days: 30
+    trash_after_days: 90
+    delete_after_days: 120
+
+  xlsx:
+    archive_after_days: 30
+    trash_after_days: 90
+    delete_after_days: 120
+  
+  mp4:
+    route: media
+
+  mov:
+    route: media
+
+  mkv:
+    route: media
+
+  mp3:
+    route: media_assets
+
+  wav:
+    route: media_assets
+
+default:
+  archive_after_days: 14
+  trash_after_days: 60
+  delete_after_days: 90
+  route: review
