@@ -1,23 +1,106 @@
 # Roadmap
 
-## v0.2
+## Vision
 
-- GitHub integration
-- Backup automation
+Build a personal automation and AI platform for macOS that combines:
 
-## v0.3
+* File management
+* Knowledge management
+* AI assistance
+* Productivity automation
 
-- Obsidian integration
-- Daily note automation
+## Version 0.1
 
-## v0.4
+Completed
 
-- AI file classification
+### Features
 
-## v0.5
+* Downloads automation
+* YAML configuration
+* Logging
+* LaunchAgent scheduling
+* Media routing
+* Review routing
+* User isolation
 
-- Hermes Agent integration
+---
 
-## v1.0
+## Version 0.2
 
-- Personal AI Operating System
+Planned
+
+### Repository Enhancements
+
+* Documentation improvements
+* Testing framework
+* Release process
+* Configuration validation
+
+### Automation Enhancements
+
+* Duplicate file detection
+* Archive reporting
+* Retention analytics
+
+---
+
+## Version 0.3
+
+Planned
+
+### Obsidian Integration
+
+* Daily note automation
+* Project note creation
+* Knowledge organization
+
+### Reporting
+
+* Weekly activity reports
+* Monthly summaries
+
+---
+
+## Version 0.4
+
+Planned
+
+### Local AI Integration
+
+* Ollama integration
+* Local model evaluation
+* File classification
+
+### AI Use Cases
+
+* Document categorization
+* Download routing suggestions
+* Knowledge extraction
+
+---
+
+## Version 0.5
+
+Planned
+
+### Hermes Agent Integration
+
+* Local agent workflows
+* File management actions
+* Knowledge management actions
+* Productivity workflows
+
+---
+
+## Version 1.0
+
+Personal AI Operating System
+
+### Capabilities
+
+* Autonomous file organization
+* Personal knowledge management
+* Work tracking
+* Weekly reporting
+* AI-assisted productivity
+* Local-first execution
