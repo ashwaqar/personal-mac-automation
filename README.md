@@ -1,105 +1,228 @@
 # personal-mac-automation
 
-Automation toolkit for a MacBook setup focused on Downloads cleanup, folder structure, and future local AI integration.
+Personal macOS automation platform focused on file organization, system maintenance, productivity workflows, and future local AI integration.
 
-## Purpose
+---
 
-This repository is designed for a single macOS user account on a personal MacBook. It keeps the automation configuration, scripts, launchd jobs, and documentation in one Git-backed place.
+# Overview
 
-## What this repository contains
+This project was created to build a maintainable, Git-backed automation platform for a personal MacBook.
 
-- `configs/` — YAML configuration for cleanup rules
-- `scripts/` — Python automation scripts
-- `launchd/` — macOS LaunchAgent examples
-- `docs/` — setup notes and operational guidance
-- `logs/` — runtime logs
-- `tests/` — test fixtures and validation notes
-- `ai/` — future local AI integration notes
+The primary goals are:
 
-## Target audience
+* Keep the Downloads folder clean automatically
+* Reduce manual file management
+* Maintain a structured folder hierarchy
+* Support future AI-assisted workflows
+* Preserve user isolation on multi-user Macs
+* Build a foundation for a personal AI operating system
 
-This repository is intended to run only for the current macOS user account. The scripts use the current user's home directory and are designed to avoid affecting other user accounts on the same machine.
+The platform is designed specifically for:
 
-## Current workflow
+* macOS
+* Python-based automation
+* LaunchAgent scheduling
+* Local-first operation
+* Future AI agent integration
+
+---
+
+# Features
+
+## Downloads Automation
+
+Automatically manages downloaded files using configurable rules.
+
+Workflow:
 
 ```text
 Downloads
-  ├── AutoArchive
-  ├── TrashLater
-  └── ToReview
-
-Media
-  ├── Videos
-  │   ├── Incoming
-  │   └── ToSort
-  └── Assets
-      └── Downloads
+    ↓
+AutoArchive
+    ↓
+TrashLater
+    ↓
+Delete
 ```
 
-## Prerequisites
+Benefits:
 
-- macOS
-- Homebrew
-- Python 3
-- Git
-- iTerm2 (recommended)
-- Oh My Zsh + Powerlevel10k (recommended)
+* Prevents Downloads folder clutter
+* Provides multiple recovery stages
+* Reduces accidental deletion
+* Enables long-term automation
 
-## One-time setup
+---
 
-### 1. Create the project folders
+## Media Routing
 
-```bash
-mkdir -p ~/Projects/personal-mac-automation
-cd ~/Projects/personal-mac-automation
-mkdir -p scripts configs launchd docs logs tests ai
+Automatically routes media files to dedicated media folders.
+
+Supported:
+
+* mp4
+* mov
+* mkv
+* mp3
+* wav
+
+Workflow:
+
+```text
+Downloads
+    ↓
+Media Routing
+    ↓
+Media/Videos/Incoming
 ```
 
-### 2. Create the downloads staging folders
+---
 
-```bash
-mkdir -p ~/Downloads/AutoArchive
-mkdir -p ~/Downloads/TrashLater
-mkdir -p ~/Downloads/ToReview
-mkdir -p ~/Media/Videos/Incoming
-mkdir -p ~/Media/Videos/ToSort
-mkdir -p ~/Media/Assets/Downloads
+## Review Queue
+
+Unknown file types are moved into:
+
+```text
+Downloads/ToReview
 ```
 
-### 3. Create the Python virtual environment
+This allows manual review before any action is taken.
 
-```bash
-cd ~/Projects/personal-mac-automation
-python3 -m venv .venv
-source .venv/bin/activate
-pip install pyyaml
-pip freeze > requirements.txt
+---
+
+## Logging
+
+All operations are logged.
+
+Log file:
+
+```text
+logs/download-manager.log
 ```
 
-### 4. Add the configuration file
+Provides:
 
-Create `configs/download-rules.yaml` and use it to control:
+* Traceability
+* Troubleshooting
+* Auditability
 
-- retention days
-- dry-run mode
-- destination paths
-- routing rules for file extensions
+---
 
-### 5. Run the script manually
+## User Isolation
 
-```bash
-cd ~/Projects/personal-mac-automation
-source .venv/bin/activate
-python scripts/download_manager.py
+The automation operates only within the current user's home directory.
+
+Implementation:
+
+```python
+Path.home()
 ```
 
-### 6. Schedule it with LaunchAgent
+Benefits:
 
-Use a user-level LaunchAgent in `~/Library/LaunchAgents` so the job runs only for this macOS user account.
+* Safe for shared Macs
+* Does not affect other users
+* No system-wide access required
 
-## Recommended folder structure
+---
 
-### Projects
+# Architecture
+
+## Core Components
+
+### Rules Engine
+
+Configuration-driven behavior.
+
+Location:
+
+```text
+configs/download-rules.yaml
+```
+
+Controls:
+
+* Retention periods
+* Routing behavior
+* Cleanup policies
+* Dry-run mode
+
+---
+
+### Automation Engine
+
+Location:
+
+```text
+scripts/download_manager.py
+```
+
+Responsibilities:
+
+* Scan Downloads
+* Evaluate file age
+* Apply routing rules
+* Move files
+* Delete files
+* Generate logs
+
+---
+
+### Logging Layer
+
+Location:
+
+```text
+logs/download-manager.log
+```
+
+Captures:
+
+* Moves
+* Deletes
+* Routing decisions
+* Errors
+
+---
+
+### Scheduling Layer
+
+Implemented using:
+
+```text
+launchd
+```
+
+Execution:
+
+```text
+~/Library/LaunchAgents
+```
+
+Benefits:
+
+* User-specific execution
+* Automatic scheduling
+* Native macOS integration
+
+---
+
+### Future AI Layer
+
+Planned integrations:
+
+* Hermes Agent
+* Ollama
+* Local LLMs
+* Obsidian automation
+* Weekly work summaries
+* Personal knowledge management
+
+---
+
+# Folder Structure
+
+## Projects
 
 ```text
 ~/Projects
@@ -111,14 +234,18 @@ Use a user-level LaunchAgent in `~/Library/LaunchAgents` so the job runs only fo
 └── personal-mac-automation
 ```
 
-### Notes
+---
+
+## Notes
 
 ```text
 ~/Notes
 └── ObsidianVault
 ```
 
-### Media
+---
+
+## Media
 
 ```text
 ~/Media
@@ -133,7 +260,9 @@ Use a user-level LaunchAgent in `~/Library/LaunchAgents` so the job runs only fo
 └── Exports
 ```
 
-### Documents
+---
+
+## Documents
 
 ```text
 ~/Documents
@@ -145,7 +274,9 @@ Use a user-level LaunchAgent in `~/Library/LaunchAgents` so the job runs only fo
 └── Family
 ```
 
-### Archive
+---
+
+## Archive
 
 ```text
 ~/Archive
@@ -155,51 +286,305 @@ Use a user-level LaunchAgent in `~/Library/LaunchAgents` so the job runs only fo
 └── Downloads
 ```
 
-## Git workflow
+---
 
-When you are ready to initialize Git:
+# Prerequisites
+
+Required:
+
+* macOS
+* Homebrew
+* Git
+* Python 3
+
+Recommended:
+
+* iTerm2
+* Oh My Zsh
+* Powerlevel10k
+* Obsidian
+
+---
+
+# Initial Setup
+
+## Create Project Structure
+
+```bash
+mkdir -p ~/Projects/personal-mac-automation
+
+cd ~/Projects/personal-mac-automation
+
+mkdir -p \
+scripts \
+configs \
+launchd \
+docs \
+logs \
+tests \
+ai
+```
+
+---
+
+## Create Downloads Workflow Folders
+
+```bash
+mkdir -p ~/Downloads/AutoArchive
+mkdir -p ~/Downloads/TrashLater
+mkdir -p ~/Downloads/ToReview
+
+mkdir -p ~/Media/Videos/Incoming
+mkdir -p ~/Media/Videos/ToSort
+
+mkdir -p ~/Media/Assets/Downloads
+```
+
+---
+
+## Create Python Virtual Environment
 
 ```bash
 cd ~/Projects/personal-mac-automation
+
+python3 -m venv .venv
+
+source .venv/bin/activate
+
+pip install pyyaml
+
+pip freeze > requirements.txt
+```
+
+---
+
+# Running the Automation
+
+Activate environment:
+
+```bash
+source .venv/bin/activate
+```
+
+Run manually:
+
+```bash
+python scripts/download_manager.py
+```
+
+---
+
+# LaunchAgent Scheduling
+
+Create:
+
+```text
+~/Library/LaunchAgents/com.ashwaq.downloadmanager.plist
+```
+
+Benefits:
+
+* Runs automatically
+* User-specific execution
+* No system-wide services
+
+---
+
+# Git Workflow
+
+Initialize:
+
+```bash
 git init
+```
+
+Commit:
+
+```bash
 git add .
 git commit -m "Initial commit"
 ```
 
-Then create a new repository on GitHub and add the remote:
+Connect repository:
 
 ```bash
-git remote add origin git@github.com:<your-user>/<repo-name>.git
+git remote add origin git@github.com:ashwaqar/personal-mac-automation.git
+```
+
+Push:
+
+```bash
 git branch -M main
 git push -u origin main
 ```
 
-## Troubleshooting
+---
 
-### `source ~/.zshrc` fails
+# SSH Setup
 
-If Oh My Zsh is not installed correctly, reinstall it and confirm that this file exists:
+Generate key:
+
+```bash
+ssh-keygen -t ed25519 -C "ashwaqar@gmail.com"
+```
+
+Add to keychain:
+
+```bash
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+```
+
+Test:
+
+```bash
+ssh -T git@github.com
+```
+
+Expected:
+
+```text
+Hi ashwaqar! You've successfully authenticated...
+```
+
+---
+
+# Multi-User Mac Strategy
+
+This Mac is configured with:
+
+* User 1: Ashwaq
+* User 2: Wife
+
+Both users have:
+
+* Separate home directories
+* Separate Apple IDs
+* Separate iCloud accounts
+* Separate browser profiles
+* Separate Downloads folders
+
+The automation only runs for Ashwaq's account.
+
+---
+
+# Troubleshooting
+
+## Files Are Not Moving
+
+Check:
+
+```yaml
+settings:
+  dry_run: false
+```
+
+Verify:
+
+```bash
+cat logs/download-manager.log
+```
+
+---
+
+## Zsh Errors
+
+Verify:
 
 ```text
 ~/.oh-my-zsh/oh-my-zsh.sh
 ```
 
-### Files are not moving
+exists.
+
+---
+
+## LaunchAgent Not Running
 
 Check:
 
-- `settings.dry_run`
-- the file age values in `configs/download-rules.yaml`
-- the log file at `~/Projects/personal-mac-automation/logs/download-manager.log`
+```bash
+launchctl list | grep downloadmanager
+```
 
-### Nothing happens for my wife’s account
+---
 
-That is expected. The automation is intended to run only under the current user account because it uses `Path.home()` and a user-level LaunchAgent.
+# Roadmap
 
-## Future ideas
+## v0.1
 
-- AI-assisted classification for unknown files
-- smarter routing for invoices, videos, and course downloads
-- backup automation
-- Obsidian maintenance scripts
-- dotfile management
+Completed
+
+* Downloads automation
+* YAML configuration
+* Logging
+* LaunchAgent scheduling
+* Media routing
+* Review routing
+* User isolation
+
+---
+
+## v0.2
+
+Planned
+
+* Duplicate detection
+* Configuration validation
+* Archive reporting
+* Retention analytics
+
+---
+
+## v0.3
+
+Planned
+
+* Obsidian integration
+* Daily note automation
+* Weekly reports
+* Monthly summaries
+
+---
+
+## v0.4
+
+Planned
+
+* Local AI integration
+* File classification
+* Knowledge extraction
+* Productivity workflows
+
+---
+
+## v0.5
+
+Planned
+
+* Hermes Agent integration
+* Agent-based file management
+* Agent-based note management
+* Automation orchestration
+
+---
+
+## v1.0
+
+Personal AI Operating System
+
+Capabilities:
+
+* Autonomous file organization
+* Knowledge management
+* Work tracking
+* Weekly reporting
+* Local AI assistance
+* Agent-driven workflows
+
+---
+
+# License
+
+MIT License
+
+See the LICENSE file for details.
