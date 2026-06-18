@@ -25,3 +25,9 @@ models/
 
 # Temporary
 tmp/
+
+# Ollama
+ollama-data/
+
+# Test Files
+test-data/
