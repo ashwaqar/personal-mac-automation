@@ -1,6 +1,6 @@
 # personal-mac-automation — Project Documentation
 
-> Comprehensive reference for the personal macOS automation platform (v0.1.1).
+> Comprehensive reference for the personal macOS automation platform (v0.2.0).
 > Last updated: 2026-06-20
 
 ---
@@ -36,7 +36,7 @@ The project is intentionally scoped to:
 - Integrate with **macOS launchd** for scheduled execution
 - Serve as a **foundation** for future local AI, Obsidian, and agent-based workflows
 
-**Current state:** v0.1.1 — Full 3-stage pipeline is implemented with media/review routing in stage 1, pytest coverage, and a version-controlled LaunchAgent plist.
+**Current state:** v0.2.0 — Full 3-stage pipeline with config validation, duplicate detection, pytest coverage (20 tests), live production mode, and a Monday 7 AM LaunchAgent schedule.
 
 ---
 
@@ -488,11 +488,10 @@ Tests use isolated temp directories via `DOWNLOAD_RULES_CONFIG`.
 
 | # | Limitation | Impact | Suggested Fix |
 |---|------------|--------|---------------|
-| 1 | No config validation | Typos fail at runtime | Add schema validation (v0.2) |
-| 2 | No duplicate detection | Same file re-downloaded stays | Planned v0.2 |
-| 3 | Direct `unlink()` delete | No macOS Trash recovery | Consider `send2trash` or move to Trash |
-| 4 | Age based on `mtime` only | Download date ≠ modification date | Consider `st_birthtime` on macOS |
-| 5 | Flat directory scan only | Subfolders in Downloads ignored | Document or add recursive option |
+| 1 | Direct `unlink()` delete | No macOS Trash recovery | Consider `send2trash` or move to Trash |
+| 2 | Age based on `mtime` only | Download date ≠ modification date | Consider `st_birthtime` on macOS |
+| 3 | Flat directory scan only | Subfolders in Downloads ignored | Document or add recursive option |
+| 4 | Duplicate match is exact filename only | Re-download may become `_1` suffix if prior collision renamed file | Acceptable; content-safe |
 
 ---
 
@@ -511,10 +510,16 @@ Tests use isolated temp directories via `DOWNLOAD_RULES_CONFIG`.
 - pytest suite, LaunchAgent plist in repo
 - Collision-safe moves, error handling
 
-### v0.2 — Planned
+### v0.2 — In progress
 
-- Configuration validation
-- Duplicate file detection
+**Completed:**
+
+- Configuration validation on startup
+- Duplicate file detection (same filename + content, size pre-check before hash)
+- Production go-live (`dry_run: false`, LaunchAgent Monday 7 AM)
+
+**Remaining:**
+
 - Archive reporting and retention analytics
 
 ### v0.3+ — Planned

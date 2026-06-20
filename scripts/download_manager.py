@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import shutil
@@ -14,9 +15,92 @@ CONFIG_FILE = Path(
     os.environ.get("DOWNLOAD_RULES_CONFIG", str(BASE_DIR / "configs" / "download-rules.yaml"))
 )
 
+REQUIRED_PATHS = (
+    "downloads_dir",
+    "auto_archive_dir",
+    "trash_later_dir",
+    "to_review_dir",
+    "media_incoming_dir",
+    "media_assets_dir",
+    "log_file",
+)
+VALID_ROUTES = frozenset({"media", "media_assets", "review", "archive"})
+THRESHOLD_KEYS = ("archive_after_days", "trash_after_days", "delete_after_days")
+
 
 def expand_path(value: str) -> Path:
     return Path(value).expanduser()
+
+
+def validate_config(config: dict) -> list[str]:
+    errors: list[str] = []
+
+    settings = config.get("settings")
+    if settings is not None and not isinstance(settings, dict):
+        errors.append("settings must be a mapping")
+    elif isinstance(settings, dict):
+        if "dry_run" in settings and not isinstance(settings["dry_run"], bool):
+            errors.append("settings.dry_run must be a boolean")
+        if "duplicate_detection" in settings and not isinstance(
+            settings["duplicate_detection"], bool
+        ):
+            errors.append("settings.duplicate_detection must be a boolean")
+
+    paths = config.get("paths")
+    if not isinstance(paths, dict):
+        errors.append("paths must be a mapping")
+    else:
+        for key in REQUIRED_PATHS:
+            if key not in paths:
+                errors.append(f"paths.{key} is required")
+            elif not isinstance(paths[key], str) or not paths[key].strip():
+                errors.append(f"paths.{key} must be a non-empty string")
+
+    rules = config.get("rules")
+    if rules is not None and not isinstance(rules, dict):
+        errors.append("rules must be a mapping")
+    elif isinstance(rules, dict):
+        for ext, rule in rules.items():
+            if not isinstance(rule, dict):
+                errors.append(f"rules.{ext} must be a mapping")
+                continue
+            errors.extend(_validate_rule(rule, f"rules.{ext}"))
+
+    default = config.get("default")
+    if default is not None:
+        if not isinstance(default, dict):
+            errors.append("default must be a mapping")
+        else:
+            errors.extend(_validate_rule(default, "default"))
+
+    return errors
+
+
+def _validate_rule(rule: dict, label: str) -> list[str]:
+    errors: list[str] = []
+    route = rule.get("route", "archive")
+
+    if route not in VALID_ROUTES:
+        errors.append(f"{label}.route must be one of: {', '.join(sorted(VALID_ROUTES))}")
+
+    thresholds: dict[str, int] = {}
+    for key in THRESHOLD_KEYS:
+        if key not in rule:
+            continue
+        value = rule[key]
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            errors.append(f"{label}.{key} must be a non-negative integer")
+        else:
+            thresholds[key] = value
+
+    ordered = [thresholds[k] for k in THRESHOLD_KEYS if k in thresholds]
+    if len(ordered) >= 2 and ordered != sorted(ordered):
+        errors.append(f"{label} thresholds must be in ascending order (archive < trash < delete)")
+
+    if route == "review" and "archive_after_days" not in rule:
+        errors.append(f"{label} with route: review requires archive_after_days")
+
+    return errors
 
 
 def load_config() -> dict:
@@ -24,14 +108,14 @@ def load_config() -> dict:
         with CONFIG_FILE.open("r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
     except FileNotFoundError:
-        logging.error("Config file not found: %s", CONFIG_FILE)
+        print(f"Config file not found: {CONFIG_FILE}", file=sys.stderr)
         sys.exit(1)
     except yaml.YAMLError as exc:
-        logging.error("Invalid YAML in config: %s", exc)
+        print(f"Invalid YAML in config: {exc}", file=sys.stderr)
         sys.exit(1)
 
     if not isinstance(config, dict):
-        logging.error("Config must be a YAML mapping")
+        print("Config must be a YAML mapping", file=sys.stderr)
         sys.exit(1)
 
     return config
@@ -48,6 +132,34 @@ def setup_logging(log_file: Path) -> None:
 
 def file_age_days(path: Path) -> float:
     return (datetime.now().timestamp() - path.stat().st_mtime) / 86400
+
+
+def file_hash(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def find_content_duplicate(src: Path, directory: Path) -> Path | None:
+    """Return an existing file with the same name and content, if any."""
+    if not directory.exists():
+        return None
+
+    candidate = directory / src.name
+    if not candidate.is_file() or candidate.resolve() == src.resolve():
+        return None
+
+    try:
+        if candidate.stat().st_size != src.stat().st_size:
+            return None
+        if file_hash(candidate) == file_hash(src):
+            return candidate
+    except OSError:
+        return None
+
+    return None
 
 
 def get_extension(item: Path) -> str:
@@ -74,8 +186,32 @@ def unique_destination(dst_dir: Path, filename: str) -> Path:
         counter += 1
 
 
-def safe_move(src: Path, dst_dir: Path, dry_run: bool) -> None:
+def remove_duplicate_source(src: Path, duplicate: Path, dry_run: bool) -> None:
+    if dry_run:
+        print(f"Would remove duplicate: {src} (matches {duplicate})")
+        logging.info("DRY_RUN DUPLICATE %s matches %s", src, duplicate)
+        return
+
+    src.unlink()
+    print(f"Removed duplicate: {src} (matches {duplicate})")
+    logging.info("DUPLICATE %s matches %s", src, duplicate)
+
+
+def safe_move(
+    src: Path,
+    dst_dir: Path,
+    dry_run: bool,
+    *,
+    check_duplicates: bool = True,
+) -> None:
     dst_dir.mkdir(parents=True, exist_ok=True)
+
+    if check_duplicates:
+        duplicate = find_content_duplicate(src, dst_dir)
+        if duplicate is not None:
+            remove_duplicate_source(src, duplicate, dry_run)
+            return
+
     dst = unique_destination(dst_dir, src.name)
 
     if dry_run:
@@ -99,18 +235,30 @@ def safe_delete(path: Path, dry_run: bool) -> None:
     logging.info("DELETE %s", path)
 
 
-def route_downloads_file(item: Path, config: dict, dry_run: bool) -> None:
+def route_downloads_file(
+    item: Path, config: dict, dry_run: bool, *, check_duplicates: bool
+) -> None:
     paths = config["paths"]
     rule = get_rule(config, item)
     ext = get_extension(item)
     route = rule.get("route", "archive")
 
     if route == "media":
-        safe_move(item, expand_path(paths["media_incoming_dir"]), dry_run)
+        safe_move(
+            item,
+            expand_path(paths["media_incoming_dir"]),
+            dry_run,
+            check_duplicates=check_duplicates,
+        )
         return
 
     if route == "media_assets":
-        safe_move(item, expand_path(paths["media_assets_dir"]), dry_run)
+        safe_move(
+            item,
+            expand_path(paths["media_assets_dir"]),
+            dry_run,
+            check_duplicates=check_duplicates,
+        )
         return
 
     age = file_age_days(item)
@@ -118,18 +266,30 @@ def route_downloads_file(item: Path, config: dict, dry_run: bool) -> None:
 
     if route == "review":
         if archive_after_days is not None and age >= archive_after_days:
-            safe_move(item, expand_path(paths["to_review_dir"]), dry_run)
+            safe_move(
+                item,
+                expand_path(paths["to_review_dir"]),
+                dry_run,
+                check_duplicates=check_duplicates,
+            )
         else:
             logging.info("NO ACTION %s ext=%s age_days=%.2f", item, ext, age)
         return
 
     if archive_after_days is not None and age >= archive_after_days:
-        safe_move(item, expand_path(paths["auto_archive_dir"]), dry_run)
+        safe_move(
+            item,
+            expand_path(paths["auto_archive_dir"]),
+            dry_run,
+            check_duplicates=check_duplicates,
+        )
     else:
         logging.info("NO ACTION %s ext=%s age_days=%.2f", item, ext, age)
 
 
-def process_downloads_folder(source_dir: Path, config: dict, dry_run: bool) -> int:
+def process_downloads_folder(
+    source_dir: Path, config: dict, dry_run: bool, *, check_duplicates: bool
+) -> int:
     errors = 0
     if not source_dir.exists():
         return errors
@@ -138,7 +298,7 @@ def process_downloads_folder(source_dir: Path, config: dict, dry_run: bool) -> i
         if not item.is_file():
             continue
         try:
-            route_downloads_file(item, config, dry_run)
+            route_downloads_file(item, config, dry_run, check_duplicates=check_duplicates)
         except OSError as exc:
             logging.error("Failed to process %s: %s", item, exc)
             errors += 1
@@ -152,6 +312,8 @@ def process_staged_folder(
     threshold_key: str,
     config: dict,
     dry_run: bool,
+    *,
+    check_duplicates: bool,
 ) -> int:
     errors = 0
     if not source_dir.exists():
@@ -172,7 +334,12 @@ def process_staged_folder(
                 if threshold_key == "delete_after_days":
                     safe_delete(item, dry_run)
                 else:
-                    safe_move(item, target_dir, dry_run)
+                    safe_move(
+                        item,
+                        target_dir,
+                        dry_run,
+                        check_duplicates=check_duplicates,
+                    )
         except OSError as exc:
             logging.error("Failed to process %s: %s", item, exc)
             errors += 1
@@ -182,29 +349,56 @@ def process_staged_folder(
 
 def main() -> None:
     config = load_config()
-    paths = config["paths"]
-    dry_run = config.get("settings", {}).get("dry_run", True)
+    errors = validate_config(config)
+    paths = config.get("paths", {})
+    settings = config.get("settings", {})
+
+    log_file_value = paths.get("log_file") if isinstance(paths, dict) else None
+    log_file = expand_path(log_file_value) if log_file_value else BASE_DIR / "logs" / "download-manager.log"
+    setup_logging(log_file)
+
+    if errors:
+        for error in errors:
+            logging.error("Config validation: %s", error)
+        sys.exit(1)
+
+    dry_run = settings.get("dry_run", True)
+    check_duplicates = settings.get("duplicate_detection", True)
+
+    logging.info(
+        "Download manager started. dry_run=%s duplicate_detection=%s",
+        dry_run,
+        check_duplicates,
+    )
 
     downloads_dir = expand_path(paths["downloads_dir"])
     auto_archive_dir = expand_path(paths["auto_archive_dir"])
     trash_later_dir = expand_path(paths["trash_later_dir"])
-    log_file = expand_path(paths["log_file"])
 
-    setup_logging(log_file)
-    logging.info("Download manager started. dry_run=%s", dry_run)
-
-    errors = 0
-    errors += process_downloads_folder(downloads_dir, config, dry_run)
-    errors += process_staged_folder(
-        auto_archive_dir, trash_later_dir, "trash_after_days", config, dry_run
+    run_errors = 0
+    run_errors += process_downloads_folder(
+        downloads_dir, config, dry_run, check_duplicates=check_duplicates
     )
-    errors += process_staged_folder(
-        trash_later_dir, trash_later_dir, "delete_after_days", config, dry_run
+    run_errors += process_staged_folder(
+        auto_archive_dir,
+        trash_later_dir,
+        "trash_after_days",
+        config,
+        dry_run,
+        check_duplicates=check_duplicates,
+    )
+    run_errors += process_staged_folder(
+        trash_later_dir,
+        trash_later_dir,
+        "delete_after_days",
+        config,
+        dry_run,
+        check_duplicates=check_duplicates,
     )
 
-    logging.info("Download manager finished. errors=%d", errors)
+    logging.info("Download manager finished. errors=%d", run_errors)
 
-    if errors:
+    if run_errors:
         sys.exit(1)
 
 

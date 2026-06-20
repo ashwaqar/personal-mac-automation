@@ -415,11 +415,26 @@ logs/launchd-stderr.log
 
 Before enabling live file moves:
 
-1. Run tests — `pytest tests/ -v` (all must pass)
-2. Run with `dry_run: true`, inspect `logs/download-manager.log`
-3. Set `dry_run: false` in `configs/download-rules.yaml`
-4. Run once manually and verify moves
-5. Load the LaunchAgent plist (see above)
+1. Activate venv — `source .venv/bin/activate`
+2. Run tests — `.venv/bin/pytest tests/ -v` (all must pass)
+3. Run with `dry_run: true`, inspect `logs/download-manager.log`
+4. Set `dry_run: false` in `configs/download-rules.yaml`
+5. Run once manually — `.venv/bin/python scripts/download_manager.py`
+6. Load the LaunchAgent plist (see above)
+
+**Current status:** Live mode enabled (`dry_run: false`). LaunchAgent runs every Monday at 7 AM.
+
+---
+
+## v0.2 Settings
+
+```yaml
+settings:
+  dry_run: false
+  duplicate_detection: true   # remove re-downloads with same filename + content
+```
+
+Config is validated on startup — invalid YAML, missing paths, or bad threshold ordering will abort with a logged error.
 
 ---
 

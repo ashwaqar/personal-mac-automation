@@ -47,18 +47,18 @@ Completed
 
 ## Version 0.2
 
-Planned
+In progress
 
-### Repository Enhancements
+### Completed
 
-* Configuration validation
-* Release process improvements
+* Configuration validation on startup
+* Duplicate file detection (SHA-256 content hash)
 
-### Automation Enhancements
+### Planned
 
-* Duplicate file detection
 * Archive reporting
 * Retention analytics
+* Release process improvements
 
 ---
 

@@ -1,5 +1,6 @@
 settings:
-  dry_run: true
+  dry_run: false
+  duplicate_detection: true
 
 paths:
   downloads_dir: ~/Downloads

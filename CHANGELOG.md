@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.0
+
+### Added
+
+- YAML config validation on startup (required paths, valid routes, threshold ordering)
+- Duplicate file detection via SHA-256 content hash (removes re-downloaded duplicates)
+- `settings.duplicate_detection` config flag (default: `true`)
+- Tests for config validation and duplicate detection
+
+### Changed
+
+- Production mode enabled (`dry_run: false`)
+- LaunchAgent installed locally with Monday 7 AM schedule from repo plist
+
+---
+
 ## v0.1.1
 
 ### Fixed
