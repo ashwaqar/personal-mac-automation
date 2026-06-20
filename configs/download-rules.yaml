@@ -1,6 +1,7 @@
 settings:
   dry_run: false
   duplicate_detection: true
+  bootstrap_folders: true
 
 paths:
   downloads_dir: ~/Downloads
@@ -10,6 +11,36 @@ paths:
   media_incoming_dir: ~/Media/Videos/Incoming
   media_assets_dir: ~/Media/Assets/Downloads
   log_file: ~/Projects/personal-mac-automation/logs/download-manager.log
+
+bootstrap_dirs:
+  # Projects
+  - ~/Projects/Active
+  - ~/Projects/Learning
+  - ~/Projects/Ideas
+  - ~/Projects/Experiments
+  - ~/Projects/Completed
+  # Notes
+  - ~/Notes/ObsidianVault
+  # Media
+  - ~/Media/Videos/ToSort
+  - ~/Media/Videos/Raw
+  - ~/Media/Videos/Final
+  - ~/Media/Photos
+  - ~/Media/ScreenRecordings
+  - ~/Media/Audio
+  - ~/Media/Exports
+  # Documents
+  - ~/Documents/Finance
+  - ~/Documents/Insurance
+  - ~/Documents/Travel
+  - ~/Documents/Certificates
+  - ~/Documents/Purchases
+  - ~/Documents/Family
+  # Archive
+  - ~/Archive/Projects
+  - ~/Archive/Documents
+  - ~/Archive/Media
+  - ~/Archive/Downloads
 
 rules:
   dmg:

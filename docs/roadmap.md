@@ -53,6 +53,7 @@ In progress
 
 * Configuration validation on startup
 * Duplicate file detection (SHA-256 content hash)
+* Workspace bootstrap (`ensure_workspace`, `bootstrap_dirs`)
 
 ### Planned
 

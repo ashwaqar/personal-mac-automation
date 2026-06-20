@@ -24,6 +24,14 @@ REQUIRED_PATHS = (
     "media_assets_dir",
     "log_file",
 )
+WORKSPACE_PATH_DIRS = (
+    "downloads_dir",
+    "auto_archive_dir",
+    "trash_later_dir",
+    "to_review_dir",
+    "media_incoming_dir",
+    "media_assets_dir",
+)
 VALID_ROUTES = frozenset({"media", "media_assets", "review", "archive"})
 THRESHOLD_KEYS = ("archive_after_days", "trash_after_days", "delete_after_days")
 
@@ -45,6 +53,10 @@ def validate_config(config: dict) -> list[str]:
             settings["duplicate_detection"], bool
         ):
             errors.append("settings.duplicate_detection must be a boolean")
+        if "bootstrap_folders" in settings and not isinstance(
+            settings["bootstrap_folders"], bool
+        ):
+            errors.append("settings.bootstrap_folders must be a boolean")
 
     paths = config.get("paths")
     if not isinstance(paths, dict):
@@ -72,6 +84,15 @@ def validate_config(config: dict) -> list[str]:
             errors.append("default must be a mapping")
         else:
             errors.extend(_validate_rule(default, "default"))
+
+    bootstrap_dirs = config.get("bootstrap_dirs")
+    if bootstrap_dirs is not None:
+        if not isinstance(bootstrap_dirs, list):
+            errors.append("bootstrap_dirs must be a list")
+        else:
+            for index, entry in enumerate(bootstrap_dirs):
+                if not isinstance(entry, str) or not entry.strip():
+                    errors.append(f"bootstrap_dirs[{index}] must be a non-empty string")
 
     return errors
 
@@ -128,6 +149,41 @@ def setup_logging(log_file: Path) -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",
     )
+
+
+def ensure_directory(path: Path) -> Path | None:
+    if path.exists():
+        return None
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def ensure_workspace(config: dict) -> list[Path]:
+    settings = config.get("settings", {})
+    if not settings.get("bootstrap_folders", True):
+        return []
+
+    paths = config["paths"]
+    created: list[Path] = []
+
+    for key in WORKSPACE_PATH_DIRS:
+        result = ensure_directory(expand_path(paths[key]))
+        if result is not None:
+            created.append(result)
+
+    log_dir = expand_path(paths["log_file"]).parent
+    result = ensure_directory(log_dir)
+    if result is not None:
+        created.append(result)
+
+    bootstrap_dirs = config.get("bootstrap_dirs")
+    if isinstance(bootstrap_dirs, list):
+        for entry in bootstrap_dirs:
+            result = ensure_directory(expand_path(entry))
+            if result is not None:
+                created.append(result)
+
+    return created
 
 
 def file_age_days(path: Path) -> float:
@@ -365,10 +421,15 @@ def main() -> None:
     dry_run = settings.get("dry_run", True)
     check_duplicates = settings.get("duplicate_detection", True)
 
+    created_dirs = ensure_workspace(config)
+    for directory in created_dirs:
+        logging.info("Created directory: %s", directory)
+
     logging.info(
-        "Download manager started. dry_run=%s duplicate_detection=%s",
+        "Download manager started. dry_run=%s duplicate_detection=%s bootstrap_created=%d",
         dry_run,
         check_duplicates,
+        len(created_dirs),
     )
 
     downloads_dir = expand_path(paths["downloads_dir"])

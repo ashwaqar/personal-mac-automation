@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.1
+
+### Added
+
+- Workspace bootstrap on startup via `ensure_workspace()`
+- Creates all automation paths from `paths` in config (Downloads workflow, Media, logs)
+- Optional `bootstrap_dirs` list for personal folder hierarchy on a fresh laptop
+- `settings.bootstrap_folders` flag (default: `true`) to enable/disable bootstrap
+- Tests for folder bootstrap (`tests/test_bootstrap.py`)
+
+---
+
 ## v0.2.0
 
 ### Added

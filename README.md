@@ -332,15 +332,27 @@ ai
 
 ## Create Downloads Workflow Folders
 
+On first run, the script creates all automation folders and any paths listed under `bootstrap_dirs` in the config. Manual setup is optional:
+
 ```bash
+# Optional — only if bootstrap_folders is false in config
 mkdir -p ~/Downloads/AutoArchive
 mkdir -p ~/Downloads/TrashLater
 mkdir -p ~/Downloads/ToReview
-
 mkdir -p ~/Media/Videos/Incoming
-mkdir -p ~/Media/Videos/ToSort
-
 mkdir -p ~/Media/Assets/Downloads
+```
+
+Folder bootstrap is controlled in `configs/download-rules.yaml`:
+
+```yaml
+settings:
+  bootstrap_folders: true   # create missing dirs on each run
+
+bootstrap_dirs:
+  - ~/Projects/Active
+  - ~/Documents/Finance
+  # ... personal folder hierarchy
 ```
 
 ---
@@ -432,9 +444,12 @@ Before enabling live file moves:
 settings:
   dry_run: false
   duplicate_detection: true   # remove re-downloads with same filename + content
+  bootstrap_folders: true     # create automation + bootstrap_dirs on startup
 ```
 
 Config is validated on startup — invalid YAML, missing paths, or bad threshold ordering will abort with a logged error.
+
+`bootstrap_dirs` in the config defines extra personal folders (Projects, Documents, Media, Archive) created automatically on a fresh laptop.
 
 ---
 
