@@ -41,11 +41,12 @@ scripts/download_manager.py
 
 Responsibilities:
 
-* Scan Downloads directory
-* Evaluate file age
-* Apply routing rules
-* Execute file moves
+* Stage 1: Scan `~/Downloads` and route or archive files
+* Stage 2: Progress `~/Downloads/AutoArchive` to TrashLater
+* Stage 3: Delete aged files from `~/Downloads/TrashLater`
 * Generate logs
+
+Each age threshold applies only in its stage folder. Media and review routing happen exclusively in stage 1.
 
 ### 3. Logging Layer
 
@@ -69,7 +70,13 @@ Implemented using:
 launchd
 ```
 
-Execution is performed through a user-level LaunchAgent.
+The repository includes `launchd/com.ashwaq.downloadmanager.plist`, scheduled for **every Monday at 7:00 AM**.
+
+Execution is performed through a user-level LaunchAgent:
+
+```text
+~/Library/LaunchAgents/com.ashwaq.downloadmanager.plist
+```
 
 This ensures:
 
@@ -90,50 +97,44 @@ Planned integrations:
 ## File Lifecycle
 
 ```text
-Downloads
-    ↓
-AutoArchive
-    ↓
-TrashLater
-    ↓
-Delete
+Stage 1 — ~/Downloads
+    ├─ media / media_assets → routed immediately
+    ├─ unknown types (review) → ToReview when aged (default: 14 days)
+    └─ standard types → AutoArchive when aged
+
+Stage 2 — ~/Downloads/AutoArchive → TrashLater when aged
+
+Stage 3 — ~/Downloads/TrashLater → permanent delete when aged
 ```
 
 ### Downloads
 
-Active working area.
+Active working area. Only this folder receives immediate media routing and age-gated review/archive decisions.
 
 ### AutoArchive
 
-Temporary retention area for files that are no longer actively used.
+Temporary retention area. Files progress to TrashLater when they exceed `trash_after_days` for their extension.
 
 ### TrashLater
 
-Final retention stage before deletion.
+Final retention stage before deletion. Files are permanently removed when they exceed `delete_after_days`.
 
 ### Delete
 
-Permanent removal after configured retention periods.
+Permanent removal after configured retention periods (`path.unlink()`).
 
 ## Media Workflow
 
 ```text
 Downloads
-    ↓
-Media Routing
-    ↓
-Media/Videos/Incoming
+    ↓ (immediate)
+Media/Videos/Incoming     (video: mp4, mov, mkv)
+Media/Assets/Downloads    (audio: mp3, wav)
 ```
-
-Supported media types:
-
-* mp4
-* mov
-* mkv
 
 ## Review Workflow
 
-Unknown file types are routed to:
+Unknown file types use the default rule (`route: review`). They remain in Downloads until `archive_after_days` is reached, then move to:
 
 ```text
 Downloads/ToReview

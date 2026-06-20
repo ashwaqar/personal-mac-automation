@@ -25,6 +25,7 @@ models/
 
 # Temporary
 tmp/
+*.bak
 
 # Ollama
 ollama-data/

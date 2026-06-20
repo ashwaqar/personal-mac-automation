@@ -33,16 +33,17 @@ The platform is designed specifically for:
 
 Automatically manages downloaded files using configurable rules.
 
-Workflow:
+The pipeline runs in three stages. Each age threshold applies only in its stage folder — media and review routing happen in stage 1 only.
 
 ```text
-Downloads
-    ↓
-AutoArchive
-    ↓
-TrashLater
-    ↓
-Delete
+Stage 1 — ~/Downloads
+    ├─ media / media_assets → routed immediately
+    ├─ unknown types (review) → ToReview when aged
+    └─ standard types → AutoArchive when aged
+
+Stage 2 — ~/Downloads/AutoArchive → TrashLater when aged
+
+Stage 3 — ~/Downloads/TrashLater → permanent delete when aged
 ```
 
 Benefits:
@@ -51,6 +52,8 @@ Benefits:
 * Provides multiple recovery stages
 * Reduces accidental deletion
 * Enables long-term automation
+
+**Default:** `dry_run: true` in `configs/download-rules.yaml` — no files are moved until you enable production mode.
 
 ---
 
@@ -80,13 +83,13 @@ Media/Videos/Incoming
 
 ## Review Queue
 
-Unknown file types are moved into:
+Unknown file types stay in Downloads until they reach the configured age threshold, then move to:
 
 ```text
 Downloads/ToReview
 ```
 
-This allows manual review before any action is taken.
+This allows manual review before any further action is taken.
 
 ---
 
@@ -372,21 +375,51 @@ Run manually:
 python scripts/download_manager.py
 ```
 
+**Default:** `dry_run: true` in `configs/download-rules.yaml` — the script logs planned actions without moving files. Set `dry_run: false` only after tests pass and you have verified behavior.
+
 ---
 
 # LaunchAgent Scheduling
 
-Create:
+A LaunchAgent plist is included in the repository:
 
 ```text
-~/Library/LaunchAgents/com.ashwaq.downloadmanager.plist
+launchd/com.ashwaq.downloadmanager.plist
 ```
 
-Benefits:
+**Schedule:** Every Monday at 7:00 AM.
 
-* Runs automatically
-* User-specific execution
-* No system-wide services
+Install:
+
+```bash
+cp launchd/com.ashwaq.downloadmanager.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.ashwaq.downloadmanager.plist
+```
+
+Verify:
+
+```bash
+launchctl list | grep downloadmanager
+```
+
+LaunchAgent stdout/stderr:
+
+```text
+logs/launchd-stdout.log
+logs/launchd-stderr.log
+```
+
+---
+
+# Production Checklist
+
+Before enabling live file moves:
+
+1. Run tests — `pytest tests/ -v` (all must pass)
+2. Run with `dry_run: true`, inspect `logs/download-manager.log`
+3. Set `dry_run: false` in `configs/download-rules.yaml`
+4. Run once manually and verify moves
+5. Load the LaunchAgent plist (see above)
 
 ---
 
@@ -521,6 +554,19 @@ Completed
 * Media routing
 * Review routing
 * User isolation
+
+---
+
+## v0.1.1
+
+Completed
+
+* Restored 3-stage pipeline (Downloads → AutoArchive → TrashLater → Delete)
+* Age-gated review routing for unknown file types
+* Error handling and collision-safe moves
+* pytest test suite
+* LaunchAgent plist in repo (Monday 7 AM)
+* `dry_run: true` safe default
 
 ---
 

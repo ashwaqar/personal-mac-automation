@@ -25,16 +25,34 @@ Completed
 
 ---
 
+## Version 0.1.1
+
+Completed
+
+### Pipeline and Hardening
+
+* Restored full 3-stage pipeline (Downloads → AutoArchive → TrashLater → Delete)
+* Age-gated review routing for unknown file types
+* Error handling with non-zero exit on failures
+* Collision-safe file moves
+* `dry_run: true` safe default
+
+### Repository
+
+* pytest test suite (`tests/`)
+* LaunchAgent plist in repo (`launchd/com.ashwaq.downloadmanager.plist`, Monday 7 AM)
+* Documentation aligned with implemented behavior
+
+---
+
 ## Version 0.2
 
 Planned
 
 ### Repository Enhancements
 
-* Documentation improvements
-* Testing framework
-* Release process
 * Configuration validation
+* Release process improvements
 
 ### Automation Enhancements
 

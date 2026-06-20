@@ -1,5 +1,5 @@
 settings:
-  dry_run: false
+  dry_run: true
 
 paths:
   downloads_dir: ~/Downloads
@@ -7,7 +7,6 @@ paths:
   trash_later_dir: ~/Downloads/TrashLater
   to_review_dir: ~/Downloads/ToReview
   media_incoming_dir: ~/Media/Videos/Incoming
-  media_to_sort_dir: ~/Media/Videos/ToSort
   media_assets_dir: ~/Media/Assets/Downloads
   log_file: ~/Projects/personal-mac-automation/logs/download-manager.log
 
@@ -41,7 +40,7 @@ rules:
     archive_after_days: 30
     trash_after_days: 90
     delete_after_days: 120
-  
+
   mp4:
     route: media
 
@@ -58,7 +57,5 @@ rules:
     route: media_assets
 
 default:
-  archive_after_days: 14
-  trash_after_days: 60
-  delete_after_days: 90
   route: review
+  archive_after_days: 14
