@@ -1,0 +1,35 @@
+---
+description: Core context for personal-mac-automation — macOS Downloads automation platform
+alwaysApply: true
+---
+
+# personal-mac-automation
+
+Python 3 + PyYAML macOS automation. Main script: `scripts/download_manager.py`. Config: `configs/download-rules.yaml`.
+
+## Before any Python command
+
+Use the project venv — Homebrew/system `python3` lacks dependencies:
+
+```bash
+source .venv/bin/activate
+# or .venv/bin/python / .venv/bin/pytest
+```
+
+## Architecture essentials
+
+- **3-stage pipeline:** Downloads (route/archive) → AutoArchive (trash) → TrashLater (delete)
+- **User-scoped:** `Path.home()` only; safe on multi-user Macs
+- **Config-driven:** extension rules in YAML; `DOWNLOAD_RULES_CONFIG` env for tests
+- **Bootstrap:** `ensure_workspace()` creates `paths` + `bootstrap_dirs` on startup
+
+## Do not
+
+- Use bare `python3` without venv
+- Apply all age thresholds in one pass on Downloads
+- Commit unless user explicitly asks
+- Add heavy dependencies without strong reason
+
+## Read first
+
+`AGENTS.md` for full agent guide. `docs/project-documentation.md` for deep reference.

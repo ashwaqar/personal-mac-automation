@@ -306,6 +306,22 @@ Recommended:
 * Oh My Zsh
 * Powerlevel10k
 * Obsidian
+* [Cursor](https://cursor.com) (optional — project includes AI rules and skills)
+
+---
+
+# Cursor AI Setup
+
+This repo includes Cursor-specific context so any new machine/account can pick up project conventions immediately.
+
+| Path | Purpose |
+|------|---------|
+| [AGENTS.md](AGENTS.md) | **Start here** — agent guide with architecture, commands, conventions |
+| `.cursor/rules/` | Auto-applied rules (project context, Python patterns, config/tests) |
+| `.cursor/skills/mac-automation-dev/` | Skill for developing features and writing tests |
+| `.cursor/skills/mac-automation-ops/` | Skill for deployment, LaunchAgent, troubleshooting |
+
+After cloning, open the folder in Cursor. Rules load automatically; invoke skills when working on dev or ops tasks.
 
 ---
 

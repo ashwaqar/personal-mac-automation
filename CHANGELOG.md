@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.2
+
+### Added
+
+- `AGENTS.md` — agent entry point for Cursor and other AI tools
+- `.cursor/rules/` — project rules (context, Python automation, config/tests)
+- `.cursor/skills/` — dev and ops skills for extending and deploying the platform
+- README Cursor AI Setup section
+
+---
+
 ## v0.2.1
 
 ### Added

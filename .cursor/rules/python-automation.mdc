@@ -1,0 +1,45 @@
+---
+description: Coding patterns for download_manager.py and automation scripts
+globs: scripts/**/*.py
+alwaysApply: false
+---
+
+# Python automation patterns
+
+## File processing flow
+
+```python
+# Stage 1 — Downloads only
+route_downloads_file(item, config, dry_run, check_duplicates=...)
+
+# Stages 2–3 — one threshold per folder
+process_staged_folder(source, target, "trash_after_days", ...)
+process_staged_folder(trash_later, trash_later, "delete_after_days", ...)
+```
+
+## Adding a feature
+
+1. Implement in `scripts/download_manager.py`
+2. Add/adjust YAML schema in `validate_config()` if config changes
+3. Add pytest in `tests/` using `make_config()` + `reload_download_manager()`
+4. Run `.venv/bin/pytest tests/ -v`
+
+## Error handling
+
+- Config load/validation: exit 1 with logged errors
+- Per-file ops: try/except `OSError`, log, continue, count errors
+- `main()` exits 1 if any file errors
+
+## Moves and duplicates
+
+- `safe_move()` handles collisions (`_1`, `_2` suffix) and optional duplicate removal
+- Duplicates: same **filename + file size + SHA-256** in destination dir only
+- Deletes use `unlink()` — permanent, not macOS Trash
+
+## Paths
+
+```python
+BASE_DIR = Path.home() / "Projects" / "personal-mac-automation"
+CONFIG_FILE = Path(os.environ.get("DOWNLOAD_RULES_CONFIG", ...))
+expand_path(value)  # expanduser for ~ paths
+```

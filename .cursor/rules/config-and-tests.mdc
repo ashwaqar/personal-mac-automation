@@ -1,0 +1,61 @@
+---
+description: YAML config and pytest conventions for personal-mac-automation
+globs: configs/**,tests/**
+alwaysApply: false
+---
+
+# Config and tests
+
+## YAML structure
+
+```yaml
+settings:
+  dry_run: bool
+  duplicate_detection: bool   # default true
+  bootstrap_folders: bool     # default true
+
+paths:                        # all keys required
+  downloads_dir: ...
+  auto_archive_dir: ...
+  trash_later_dir: ...
+  to_review_dir: ...
+  media_incoming_dir: ...
+  media_assets_dir: ...
+  log_file: ...
+
+bootstrap_dirs:               # optional list of extra folders
+  - ~/Projects/Active
+
+rules:
+  pdf:
+    archive_after_days: 30
+    trash_after_days: 90
+    delete_after_days: 120
+  mp4:
+    route: media              # media | media_assets | review | archive
+
+default:
+  route: review
+  archive_after_days: 14
+```
+
+Thresholds must be ascending: archive < trash < delete. Review route requires `archive_after_days`.
+
+## Test patterns
+
+```python
+from conftest import make_config, reload_download_manager, set_file_age_days
+
+# Isolated config via env var
+dm = reload_download_manager(monkeypatch, config_path)
+set_file_age_days(path, 31)  # simulate aged file
+dm.main()
+```
+
+Use `tmp_path` fixtures — never touch real `~/Downloads` in tests.
+
+## Verification before completion
+
+```bash
+.venv/bin/pytest tests/ -v
+```
